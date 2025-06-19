@@ -1,0 +1,41 @@
+<resources>
+    <string name="app_name">CV.MMK</string>
+    <string name="project_location">Location: %s</string>
+    <string name="project_start_date">Start Date: %s</string>
+    <string name="project_status">Status: %s</string>
+    <string name="project_progress">Progress: %d%%</string>
+    <string name="project_notes">Notes: %s</string>
+    <string name="project_workers">Workers: %s</string>
+    <string name="no_notes">No notes</string>
+    <string name="no_workers">None</string>
+    <string name="edit">Edit</string>
+    <string name="delete">Delete</string>
+    <string name="update_progress">Update Progress</string>
+    <string name="confirm_deletion_title">Confirm Deletion</string>
+    <string name="confirm_deletion_message">Are you sure you want to delete the project \'%s\'? This action cannot be undone.</string>
+    <string name="project_deleted_success">Project \'%s\' deleted successfully</string>
+    <string name="project_deletion_failed">Failed to delete project</string>
+
+    <string name="logout_confirm_title">Konfirmasi Keluar</string>
+    <string name="logout_confirm_message">Apakah Anda yakin ingin keluar dari aplikasi?</string>
+
+    <string name="error_title">Error</string>
+    <string name="error_navigating_to">Gagal membuka %s. Silakan coba lagi.</string>
+    <string name="ok">OK</string>
+    <string name="welcome_message">Selamat datang, %s</string>
+    <string name="confirm_logout_title">Konfirmasi Keluar</string>
+    <string name="confirm_logout_message">Apakah Anda yakin ingin keluar dari aplikasi?</string>
+    <string name="yes">Ya</string>
+    <string name="cancel">Batal</string>
+    <string name="remove_image">Hapus Image</string>
+    <string name="no_workers_available">Tidak ada pekerja tersedia</string>
+    <string name="select_workers">Pilih Pekerja</string>
+
+    <string name="project_image">Project Image</string>
+
+        <string name="project_name">Project Name</string>
+
+        <string name="add_image">Add Image</string>
+        <string name="take_photo">Take Photo</string>
+        <string name="save">Save</string>
+</resources>

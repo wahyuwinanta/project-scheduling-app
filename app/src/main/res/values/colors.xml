@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <color name="primary_color">#6366F1</color>
+    <color name="primary_dark">#4F46E5</color>
+    <color name="accent_color">#F59E0B</color>
+    <color name="background_start">#667EEA</color>
+    <color name="background_end">#764BA2</color>
+    <color name="text_primary">#1F2937</color>
+    <color name="text_secondary">#6B7280</color>
+
+    <!-- Primary Blue Colors -->
+    <color name="primary_blue">#1976D2</color>
+    <color name="primary_blue_dark">#0D47A1</color>
+    <color name="primary_blue_light">#42A5F5</color>
+
+    <!-- Secondary Blue Colors -->
+    <color name="secondary_blue">#2196F3</color>
+    <color name="secondary_blue_dark">#1565C0</color>
+    <color name="secondary_blue_light">#64B5F6</color>
+
+    <!-- Accent Colors -->
+    <color name="accent_blue">#03DAC6</color>
+    <color name="accent_blue_light">#4FD3C4</color>
+
+    <!-- Background Colors -->
+    <color name="background_light">#F5F7FA</color>
+    <color name="background_white">#FFFFFF</color>
+    <color name="card_background">#FFFFFF</color>
+
+    <!-- Text Colors -->
+    <color name="text_hint">#9CA3AF</color>
+
+    <!-- Transparent Colors -->
+    <color name="white_transparent">#33FFFFFF</color>
+    <color name="blue_transparent">#331976D2</color>
+
+    <!-- Status Colors -->
+    <color name="success_green">#10B981</color>
+    <color name="warning_yellow">#F59E0B</color>
+    <color name="error_red">#EF4444</color>
+
+    <color name="blue_200">#42A5F5</color>
+    <color name="blue_400">#1E88E5</color>
+    <color name="blue_600">#1565C0</color>
+    <color name="blue_800">#0D47A1</color>
+
+    <color name="blue_primary">#2196F3</color>
+    <color name="blue_primary_dark">#1976D2</color>
+    <color name="blue_light">#BBDEFB</color>
+    <color name="blue_accent">#03DAC5</color>
+
+    <!-- Secondary Colors -->
+    <color name="green_success">#4CAF50</color>
+    <color name="orange_warning">#FF9800</color>
+    <color name="purple_accent">#9C27B0</color>
+
+    <!-- Status Colors -->
+    <color name="red_error">#F44336</color>
+    <color name="yellow_warning">#FFC107</color>
+    <color name="status_not_started">#FF999999</color> <!-- Gray for Not Started -->
+    <color name="status_in_progress">#FF2196F3</color> <!-- Blue for In Progress -->
+    <color name="status_completed">#FF4CAF50</color> <!-- Green for Completed -->
+</resources>
