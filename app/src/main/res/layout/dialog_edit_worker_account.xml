@@ -16,7 +16,7 @@
             android:id="@+id/tv_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Add Worker"
+            android:text="Edit Worker"
             android:textSize="20sp"
             android:textStyle="bold"
             android:textColor="#212121"

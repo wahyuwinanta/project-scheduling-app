@@ -29,6 +29,7 @@
         </activity>
 
         <activity android:name=".AddWorkerActivity"/>
+        <activity android:name=".AddOwnerActivity"/>
         <activity android:name=".AdminActivity"/>
         <activity android:name=".UpdateProjectActivity"/>
         <activity android:name=".WorkerAccountsActivity"/>
@@ -39,6 +40,9 @@
         <activity android:name=".EditProjectActivity"
             android:windowSoftInputMode="adjustResize" />
         <activity android:name=".ProjectListActivity" />
+        <activity android:name=".OwnerDashboardActivity"/>
+        <activity android:name=".OwnerAccountsActivity"/>
+        <activity android:name=".OwnerProjectListActivity"/>
 
 
 

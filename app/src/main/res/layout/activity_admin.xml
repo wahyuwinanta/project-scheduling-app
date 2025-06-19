@@ -196,7 +196,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/tv_menu_title">
 
-            <!-- Row 1 -->
+            <!-- Row 1: Tambah Proyek | Lihat Proyek -->
             <androidx.cardview.widget.CardView
                 android:id="@+id/card_add_project"
                 android:layout_width="0dp"
@@ -205,7 +205,7 @@
                 android:layout_marginBottom="16dp"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="6dp"
-                app:layout_constraintEnd_toStartOf="@id/card_add_worker"
+                app:layout_constraintEnd_toStartOf="@id/card_view_projects"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent">
 
@@ -213,13 +213,12 @@
                     android:id="@+id/btn_add_project"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:background="@drawable/gradient_blue_primary"
+                    android:background="@drawable/gradient_blue_tertiary"
                     android:text="Tambah\nProyek"
                     android:textColor="@android:color/white"
                     android:textSize="16sp"
                     android:textStyle="bold"
                     app:backgroundTint="@null"
-                    app:icon="@drawable/ic_add_project"
                     app:iconGravity="top"
                     app:iconSize="32dp"
                     app:iconTint="@android:color/white" />
@@ -227,7 +226,7 @@
             </androidx.cardview.widget.CardView>
 
             <androidx.cardview.widget.CardView
-                android:id="@+id/card_add_worker"
+                android:id="@+id/card_view_projects"
                 android:layout_width="0dp"
                 android:layout_height="120dp"
                 android:layout_marginStart="8dp"
@@ -239,36 +238,6 @@
                 app:layout_constraintTop_toTopOf="parent">
 
                 <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_add_worker"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:background="@drawable/gradient_blue_secondary"
-                    android:text="Tambah\nPekerja"
-                    android:textColor="@android:color/white"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    app:backgroundTint="@null"
-                    app:icon="@drawable/ic_add_person"
-                    app:iconGravity="top"
-                    app:iconSize="32dp"
-                    app:iconTint="@android:color/white" />
-
-            </androidx.cardview.widget.CardView>
-
-            <!-- Row 2 -->
-            <androidx.cardview.widget.CardView
-                android:id="@+id/card_view_projects"
-                android:layout_width="0dp"
-                android:layout_height="120dp"
-                android:layout_marginTop="8dp"
-                android:layout_marginEnd="8dp"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="6dp"
-                app:layout_constraintEnd_toStartOf="@id/card_manage_accounts"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/card_add_project">
-
-                <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_view_projects"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
@@ -278,7 +247,36 @@
                     android:textSize="16sp"
                     android:textStyle="bold"
                     app:backgroundTint="@null"
-                    app:icon="@drawable/ic_view_list"
+                    app:iconGravity="top"
+                    app:iconSize="32dp"
+                    app:iconTint="@android:color/white" />
+
+            </androidx.cardview.widget.CardView>
+
+            <!-- Row 2: Tambah Pekerja | Kelola Akun Pekerja -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/card_add_worker"
+                android:layout_width="0dp"
+                android:layout_height="120dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginBottom="16dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="6dp"
+                app:layout_constraintEnd_toStartOf="@id/card_manage_accounts"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/card_add_project">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_add_worker"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/gradient_blue_primary"
+                    android:text="Tambah\nPekerja"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    app:backgroundTint="@null"
                     app:iconGravity="top"
                     app:iconSize="32dp"
                     app:iconTint="@android:color/white" />
@@ -291,23 +289,80 @@
                 android:layout_height="120dp"
                 android:layout_marginTop="8dp"
                 android:layout_marginStart="8dp"
+                android:layout_marginBottom="16dp"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="6dp"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toEndOf="@id/card_view_projects"
-                app:layout_constraintTop_toBottomOf="@id/card_add_worker">
+                app:layout_constraintStart_toEndOf="@id/card_add_worker"
+                app:layout_constraintTop_toBottomOf="@id/card_view_projects">
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_manage_accounts"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:background="@drawable/gradient_blue_quaternary"
-                    android:text="Kelola\nAkun"
+                    android:background="@drawable/gradient_blue_secondary"
+                    android:text="Kelola Akun\nPekerja"
                     android:textColor="@android:color/white"
                     android:textSize="16sp"
                     android:textStyle="bold"
                     app:backgroundTint="@null"
-                    app:icon="@drawable/ic_manage_accounts"
+                    app:iconGravity="top"
+                    app:iconSize="32dp"
+                    app:iconTint="@android:color/white" />
+
+            </androidx.cardview.widget.CardView>
+
+            <!-- Row 3: Tambah Owner | Kelola Akun Owner -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/card_add_owner"
+                android:layout_width="0dp"
+                android:layout_height="120dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginEnd="8dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="6dp"
+                app:layout_constraintEnd_toStartOf="@id/card_manage_owners"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/card_add_worker">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_add_owner"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/gradient_blue_quaternary"
+                    android:text="Tambah\nOwner"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    app:backgroundTint="@null"
+                    app:iconGravity="top"
+                    app:iconSize="32dp"
+                    app:iconTint="@android:color/white" />
+
+            </androidx.cardview.widget.CardView>
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/card_manage_owners"
+                android:layout_width="0dp"
+                android:layout_height="120dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginStart="8dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="6dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@id/card_add_owner"
+                app:layout_constraintTop_toBottomOf="@id/card_manage_accounts">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_manage_owners"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/gradient_blue_quaternary"
+                    android:text="Kelola Akun\nOwner"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    app:backgroundTint="@null"
                     app:iconGravity="top"
                     app:iconSize="32dp"
                     app:iconTint="@android:color/white" />
