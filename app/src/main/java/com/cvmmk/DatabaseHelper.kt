@@ -778,6 +778,36 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         return projects
     }
 
+    fun getAssignedWorkers(projectId: Int): List<User> {
+        val workerList = mutableListOf<User>()
+        val db = readableDatabase
+        val query = """
+        SELECT u.* FROM $TABLE_USERS u
+        JOIN $TABLE_WORKERS pw ON u.$KEY_USER_ID = pw.$KEY_WORKER_ID
+        WHERE pw.$KEY_PROJECT_ID = ?
+    """
+        val cursor = db.rawQuery(query, arrayOf(projectId.toString()))
+
+        try {
+            if (cursor.moveToFirst()) {
+                do {
+                    val user = User(
+                        id = cursor.getInt(cursor.getColumnIndexOrThrow(KEY_USER_ID)),
+                        username = cursor.getString(cursor.getColumnIndexOrThrow(KEY_USERNAME)),
+                        role = cursor.getString(cursor.getColumnIndexOrThrow(KEY_ROLE)),
+                        workerId = cursor.getInt(cursor.getColumnIndexOrThrow(KEY_WORKER_ID))
+                    )
+                    workerList.add(user)
+                } while (cursor.moveToNext())
+            }
+        } catch (e: Exception) {
+            Log.e("DatabaseHelper", "Error getting assigned workers: ${e.message}", e)
+        } finally {
+            cursor.close()
+        }
+        return workerList
+    }
+
     // Get Assignment IDs for Project
     fun getAssignmentIdsForProject(projectId: Int): List<Int> {
         val assignmentIds = mutableListOf<Int>()
