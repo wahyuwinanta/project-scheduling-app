@@ -8,6 +8,7 @@ import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 
+
 class ImageAdapter(
     private val imageUris: MutableList<Uri>,
     private val isEditable: Boolean = false,
