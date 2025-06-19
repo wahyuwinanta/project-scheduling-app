@@ -154,6 +154,88 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         onCreate(db)
     }
 
+    // Add Owner (Admin only)
+    fun addOwner(adminId: Int, username: String, password: String): Long {
+        if (!isAdmin(adminId)) {
+            Log.w("DatabaseHelper", "Unauthorized: User ID $adminId is not an admin")
+            return -1
+        }
+        return addUser(username, password, "owner")
+    }
+
+    // Update Owner (Admin only)
+    fun updateOwner(adminId: Int, ownerId: Int, username: String, password: String): Int {
+        if (!isAdmin(adminId)) {
+            Log.w("DatabaseHelper", "Unauthorized: User ID $adminId is not an admin")
+            return 0
+        }
+        val user = getUserById(ownerId)
+        if (user?.role != "owner") {
+            Log.w("DatabaseHelper", "User ID $ownerId is not an owner")
+            return 0
+        }
+        return updateUserAccount(ownerId, username, password)
+    }
+
+    // Delete Owner (Admin only)
+    fun deleteOwner(adminId: Int, ownerId: Int): Boolean {
+        if (!isAdmin(adminId)) {
+            Log.w("DatabaseHelper", "Unauthorized: User ID $adminId is not an admin")
+            return false
+        }
+        val user = getUserById(ownerId)
+        if (user?.role != "owner") {
+            Log.w("DatabaseHelper", "User ID $ownerId is not an owner")
+            return false
+        }
+        val db = writableDatabase
+        return try {
+            val rows = db.delete(TABLE_USERS, "$KEY_USER_ID = ?", arrayOf(ownerId.toString()))
+            Log.d("DatabaseHelper", "Deleted $rows owner row(s) for ownerId=$ownerId")
+            rows > 0
+        } catch (e: Exception) {
+            Log.e("DatabaseHelper", "Error deleting owner: ${e.message}", e)
+            false
+        }
+    }
+
+    // Get All Owners (Admin only)
+    fun getAllOwners(adminId: Int): List<User> {
+        if (!isAdmin(adminId)) {
+            Log.w("DatabaseHelper", "Unauthorized: User ID $adminId is not an admin")
+            return emptyList()
+        }
+        val owners = mutableListOf<User>()
+        val db = readableDatabase
+        val cursor = db.rawQuery(
+            "SELECT * FROM $TABLE_USERS WHERE $KEY_ROLE = ?",
+            arrayOf("owner")
+        )
+        try {
+            while (cursor.moveToNext()) {
+                val user = User(
+                    id = cursor.getInt(cursor.getColumnIndexOrThrow(KEY_USER_ID)),
+                    username = cursor.getString(cursor.getColumnIndexOrThrow(KEY_USERNAME)),
+                    role = cursor.getString(cursor.getColumnIndexOrThrow(KEY_ROLE)),
+                    workerId = cursor.getIntOrNull(cursor.getColumnIndexOrThrow(KEY_WORKER_ID_FK))
+                )
+                owners.add(user)
+            }
+        } catch (e: Exception) {
+            Log.e("DatabaseHelper", "Error getting owners: ${e.message}", e)
+        } finally {
+            cursor.close()
+        }
+        Log.d("DatabaseHelper", "Retrieved ${owners.size} owner(s)")
+        return owners
+    }
+
+    // Check if user is Admin
+    private fun isAdmin(userId: Int): Boolean {
+        val user = getUserById(userId)
+        return user?.role == "admin"
+    }
+
     // Add Project
     fun addProject(
         name: String,

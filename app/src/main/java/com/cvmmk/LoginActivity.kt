@@ -17,24 +17,29 @@ class LoginActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Inisialisasi dengan error handling
-        initializeComponents()
-
-        // Cek session yang ada
-        if (checkExistingSession()) {
-            return // Jika ada session valid dan berhasil redirect, keluar
+        // Initialize components (DatabaseHelper and SessionManager)
+        if (!initializeComponents()) {
+            showFatalError("Gagal menginisialisasi komponen aplikasi")
+            return
         }
 
-        // Setup UI jika tidak ada session
+        // Check for existing valid session
+        if (checkExistingSession()) {
+            return // Exit if session is valid and redirect succeeds
+        }
+
+        // Setup UI for login
         setupUI()
     }
 
-    private fun initializeComponents() {
-        try {
+    private fun initializeComponents(): Boolean {
+        return try {
             dbHelper = DatabaseHelper(this)
             sessionManager = SessionManager(this)
+            true
         } catch (e: Exception) {
-            Log.e("LoginActivity", "Error initializing components: ${e.message}")
+            Log.e("LoginActivity", "Error initializing components: ${e.message}", e)
+            false
         }
     }
 
@@ -46,42 +51,26 @@ class LoginActivity : AppCompatActivity() {
                     redirectToMainActivity(user)
                     return true
                 } else {
-                    // Session tidak valid, hapus
+                    // Invalid session, clear it
                     sessionManager.clearSession()
+                    Log.w("LoginActivity", "Invalid session detected, cleared")
                 }
             }
             false
         } catch (e: Exception) {
-            Log.e("LoginActivity", "Error checking session: ${e.message}")
-            // Jika ada error, hapus session yang mungkin corrupt
-            try {
-                sessionManager.clearSession()
-            } catch (clearError: Exception) {
-                Log.e("LoginActivity", "Error clearing session: ${clearError.message}")
-            }
+            Log.e("LoginActivity", "Error checking session: ${e.message}", e)
+            sessionManager.clearSession()
             false
         }
     }
 
     private fun validateUserInDatabase(user: User): Boolean {
         return try {
-            // Cek apakah username masih ada di database
-            val db = dbHelper.readableDatabase
-            val cursor = db.rawQuery(
-                "SELECT id, role FROM users WHERE username = ?",
-                arrayOf(user.username)
-            )
-            val isValid = if (cursor.moveToFirst()) {
-                val dbUserId = cursor.getInt(0)
-                val dbUserRole = cursor.getString(1)
-                dbUserId == user.id && dbUserRole == user.role
-            } else {
-                false
-            }
-            cursor.close()
-            isValid
+            // Verify user exists in database with matching ID and role
+            val dbUser = dbHelper.getUserById(user.id)
+            dbUser != null && dbUser.username == user.username && dbUser.role == user.role
         } catch (e: Exception) {
-            Log.e("LoginActivity", "Error validating user: ${e.message}")
+            Log.e("LoginActivity", "Error validating user: ${e.message}", e)
             false
         }
     }
@@ -93,9 +82,8 @@ class LoginActivity : AppCompatActivity() {
             setupClickListeners()
             setupPasswordToggle()
         } catch (e: Exception) {
-            Log.e("LoginActivity", "Error setting up UI: ${e.message}")
-            // Jika gagal setup UI, coba restart activity
-            recreate()
+            Log.e("LoginActivity", "Error setting up UI: ${e.message}", e)
+            showFatalError("Gagal menyiapkan antarmuka pengguna")
         }
     }
 
@@ -105,7 +93,8 @@ class LoginActivity : AppCompatActivity() {
                 performLogin()
             }
         } catch (e: Exception) {
-            Log.e("LoginActivity", "Error setting up click listeners: ${e.message}")
+            Log.e("LoginActivity", "Error setting up click listeners: ${e.message}", e)
+            showError("Gagal mengatur tombol login")
         }
     }
 
@@ -115,29 +104,29 @@ class LoginActivity : AppCompatActivity() {
                 togglePasswordVisibility()
             }
         } catch (e: Exception) {
-            Log.e("LoginActivity", "Error setting up password toggle: ${e.message}")
+            Log.e("LoginActivity", "Error setting up password toggle: ${e.message}", e)
+            showError("Gagal mengatur toggle kata sandi")
         }
     }
 
     private fun togglePasswordVisibility() {
         try {
             if (isPasswordVisible) {
-                // Sembunyikan password
+                // Hide password
                 binding.etPassword.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
                 binding.ivTogglePassword.setImageResource(R.drawable.ic_eye_closed)
                 isPasswordVisible = false
             } else {
-                // Tampilkan password
+                // Show password
                 binding.etPassword.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
                 binding.ivTogglePassword.setImageResource(R.drawable.ic_eye_open)
                 isPasswordVisible = true
             }
-
-            // Pindahkan cursor ke akhir teks
+            // Move cursor to end of text
             binding.etPassword.setSelection(binding.etPassword.text.length)
-
         } catch (e: Exception) {
-            Log.e("LoginActivity", "Error toggling password visibility: ${e.message}")
+            Log.e("LoginActivity", "Error toggling password visibility: ${e.message}", e)
+            showError("Gagal mengubah visibilitas kata sandi")
         }
     }
 
@@ -149,7 +138,7 @@ class LoginActivity : AppCompatActivity() {
             hideError()
 
             if (username.isEmpty() || password.isEmpty()) {
-                showError("Harap isi semua kolom")
+                showError("Harap isi username dan kata sandi")
                 return
             }
 
@@ -157,11 +146,11 @@ class LoginActivity : AppCompatActivity() {
             if (user != null) {
                 handleLoginSuccess(user)
             } else {
-                showError("Username atau password salah")
+                showError("Username atau kata sandi salah")
             }
         } catch (e: Exception) {
-            Log.e("LoginActivity", "Error during login: ${e.message}")
-            showError("Terjadi kesalahan saat login")
+            Log.e("LoginActivity", "Error during login: ${e.message}", e)
+            showError("Gagal login: Terjadi kesalahan pada sistem")
         }
     }
 
@@ -171,8 +160,8 @@ class LoginActivity : AppCompatActivity() {
             Log.d("LoginActivity", "Session saved for user: ${user.username}, role: ${user.role}, id: ${user.id}")
             redirectToMainActivity(user)
         } catch (e: Exception) {
-            Log.e("LoginActivity", "Error handling login success: ${e.message}")
-            showError("Terjadi kesalahan saat menyimpan session")
+            Log.e("LoginActivity", "Error handling login success: ${e.message}", e)
+            showError("Gagal menyimpan sesi login")
         }
     }
 
@@ -180,21 +169,20 @@ class LoginActivity : AppCompatActivity() {
         try {
             val intent = when (user.role) {
                 "admin" -> Intent(this, AdminActivity::class.java)
-                "worker" -> {
-                    Intent(this, WorkerDashboardActivity::class.java).apply {
-                        putExtra("WORKER_ID", user.workerId)
-                    }
+                "worker" -> Intent(this, WorkerDashboardActivity::class.java).apply {
+                    putExtra("WORKER_ID", user.workerId)
                 }
+                "owner" -> Intent(this, OwnerDashboardActivity::class.java)
                 else -> {
-                    showError("Peran tidak valid")
+                    showError("Peran pengguna tidak dikenali")
                     return
                 }
             }
             startActivity(intent)
             finish()
         } catch (e: Exception) {
-            Log.e("LoginActivity", "Error redirecting: ${e.message}")
-            showError("Terjadi kesalahan saat membuka halaman utama")
+            Log.e("LoginActivity", "Error redirecting to main activity: ${e.message}", e)
+            showError("Gagal membuka halaman utama")
         }
     }
 
@@ -203,9 +191,24 @@ class LoginActivity : AppCompatActivity() {
             if (::binding.isInitialized) {
                 binding.tvErrorMessage.text = message
                 binding.tvErrorMessage.visibility = android.view.View.VISIBLE
+            } else {
+                Log.w("LoginActivity", "Binding not initialized, cannot show error: $message")
             }
         } catch (e: Exception) {
-            Log.e("LoginActivity", "Error showing error: ${e.message}")
+            Log.e("LoginActivity", "Error showing error message: ${e.message}", e)
+        }
+    }
+
+    private fun showFatalError(message: String) {
+        try {
+            if (::binding.isInitialized) {
+                binding.tvErrorMessage.text = "$message. Silakan coba lagi nanti."
+                binding.tvErrorMessage.visibility = android.view.View.VISIBLE
+                binding.btnLogin.isEnabled = false
+            }
+            Log.e("LoginActivity", "Fatal error: $message")
+        } catch (e: Exception) {
+            Log.e("LoginActivity", "Error showing fatal error: ${e.message}", e)
         }
     }
 
@@ -215,7 +218,7 @@ class LoginActivity : AppCompatActivity() {
                 binding.tvErrorMessage.visibility = android.view.View.GONE
             }
         } catch (e: Exception) {
-            Log.e("LoginActivity", "Error hiding error: ${e.message}")
+            Log.e("LoginActivity", "Error hiding error message: ${e.message}", e)
         }
     }
 }
