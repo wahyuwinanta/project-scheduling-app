@@ -16,8 +16,3 @@ Aplikasi Android untuk membantu perusahaan konstruksi dalam **mengelola dan menj
 - **SQLite Database**
 - **Material Design UI**
 
-## 🚀 Cara Menjalankan Aplikasi
-
-1. Clone repositori ini:
-   ```bash
-   git clone https://github.com/username/nama-repo.git
