@@ -13,10 +13,8 @@ import java.io.File
 
 class WorkerProjectAdapter(
     private var projects: List<ProjectWithDetails>,
-    dbHelper: DatabaseHelper.Companion,
-    onProgressClick: (ProjectWithDetails) -> Unit,
-//    private val dbHelper: DatabaseHelper,
-//    private val onProgressClick: (ProjectWithDetails) -> Unit
+    private val dbHelper: DatabaseHelper.Companion,
+    private val onProgressClick: (ProjectWithDetails) -> Unit
 ) : RecyclerView.Adapter<WorkerProjectAdapter.ProjectViewHolder>() {
 
     class ProjectViewHolder(val binding: ItemWorkerProjectBinding) : RecyclerView.ViewHolder(binding.root)
@@ -58,7 +56,10 @@ class WorkerProjectAdapter(
                 setHasFixedSize(true)
             }
 
-            // Set click listener for progress update
+            // Set click listener for update button
+            btnUpdate.setOnClickListener {
+                onProgressClick(project)
+            }
 
             Log.d("WorkerProjectAdapter", "Bound project ${project.id} with ${imageUris.size} images")
         }

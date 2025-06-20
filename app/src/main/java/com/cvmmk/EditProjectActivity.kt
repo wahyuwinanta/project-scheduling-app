@@ -216,9 +216,6 @@ class EditProjectActivity : AppCompatActivity() {
 
             val updated = dbHelper.updateProject(
                 projectId = projectId,
-                name = name,
-                location = location,
-                startDate = startDate,
                 status = status,
                 progressPercentage = progress,
                 notes = if (notes.isEmpty()) null else notes

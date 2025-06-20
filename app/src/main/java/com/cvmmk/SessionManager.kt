@@ -8,6 +8,16 @@ class SessionManager(private val context: Context) {
     private val sharedPreferences: SharedPreferences =
         context.getSharedPreferences("user_session", Context.MODE_PRIVATE)
 
+    private val prefs = context.getSharedPreferences("CVMMKPrefs", Context.MODE_PRIVATE)
+
+    fun getLastAssignmentCheckTime(): Long {
+        return sharedPreferences.getLong("last_assignment_check", 0L)
+    }
+
+    fun setLastAssignmentCheckTime(time: Long) {
+        sharedPreferences.edit().putLong("last_assignment_check", time).apply()
+    }
+
     fun saveSession(user: User) {
         try {
             with(sharedPreferences.edit()) {
@@ -59,6 +69,8 @@ class SessionManager(private val context: Context) {
             null
         }
     }
+
+
 
     fun clearSession() {
         try {

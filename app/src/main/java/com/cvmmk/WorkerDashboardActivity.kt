@@ -3,12 +3,40 @@ package com.cvmmk
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.view.animation.AnimationUtils
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.cvmmk.databinding.ActivityWorkerDashboardBinding
+
+data class Notification(val id: Int, val title: String, val message: String, val timestamp: Long)
+data class ProjectAssignment(val id: Int, val projectId: Int, val workerId: Int, val isNew: Boolean)
+
+class NotificationAdapter(private val notifications: List<Notification>) :
+    androidx.recyclerview.widget.RecyclerView.Adapter<NotificationAdapter.ViewHolder>() {
+    class ViewHolder(itemView: android.view.View) :
+        androidx.recyclerview.widget.RecyclerView.ViewHolder(itemView) {
+        val title: android.widget.TextView = itemView.findViewById(android.R.id.text1)
+        val message: android.widget.TextView = itemView.findViewById(android.R.id.text2)
+    }
+
+    override fun onCreateViewHolder(parent: android.view.ViewGroup, viewType: Int): ViewHolder {
+        val view = android.view.LayoutInflater.from(parent.context)
+            .inflate(android.R.layout.simple_list_item_2, parent, false)
+        return ViewHolder(view)
+    }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        val notification = notifications[position]
+        holder.title.text = notification.title
+        holder.message.text = notification.message
+    }
+
+    override fun getItemCount() = notifications.size
+}
 
 class WorkerDashboardActivity : AppCompatActivity() {
     private lateinit var binding: ActivityWorkerDashboardBinding
@@ -18,7 +46,6 @@ class WorkerDashboardActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         try {
             binding = ActivityWorkerDashboardBinding.inflate(layoutInflater)
             setContentView(binding.root)
@@ -39,7 +66,6 @@ class WorkerDashboardActivity : AppCompatActivity() {
                 return
             }
 
-            // Use workerId from user session if available
             if (user.workerId != null && user.workerId > 0) {
                 workerId = user.workerId
             }
@@ -55,9 +81,11 @@ class WorkerDashboardActivity : AppCompatActivity() {
 
             setupUI()
             loadWorkerData()
+            checkNewAssignments()
+            loadStats()
+            loadRecentNotifications()
             setupClickListeners()
             animateViews()
-
         } catch (e: Exception) {
             Log.e("WorkerDashboardActivity", "Error in onCreate: ${e.message}", e)
             Toast.makeText(this, "Gagal memuat dashboard", Toast.LENGTH_SHORT).show()
@@ -80,10 +108,7 @@ class WorkerDashboardActivity : AppCompatActivity() {
 
     private fun setupUI() {
         try {
-            // Set status bar color
             window.statusBarColor = ContextCompat.getColor(this, R.color.blue_primary)
-
-            // Hide action bar for custom toolbar
             supportActionBar?.hide()
         } catch (e: Exception) {
             Log.e("WorkerDashboardActivity", "Error setting up UI: ${e.message}", e)
@@ -93,10 +118,10 @@ class WorkerDashboardActivity : AppCompatActivity() {
     private fun loadWorkerData() {
         try {
             val worker = dbHelper.getWorkerById(workerId)
+            Log.d("WorkerDashboardActivity", "Worker data: $worker")
             if (worker != null) {
                 binding.tvWorkerName.text = worker.name ?: "Nama tidak tersedia"
                 binding.tvWorkerRole.text = worker.role ?: "Posisi tidak tersedia"
-                Log.d("WorkerDashboardActivity", "Loaded worker data: ${worker.name}, ${worker.role}")
             } else {
                 Log.e("WorkerDashboardActivity", "Worker not found for ID: $workerId")
                 binding.tvWorkerName.text = "Pekerja tidak ditemukan"
@@ -104,29 +129,78 @@ class WorkerDashboardActivity : AppCompatActivity() {
                 Toast.makeText(this, "Data pekerja tidak ditemukan", Toast.LENGTH_SHORT).show()
             }
         } catch (e: Exception) {
-            Log.e("WorkerDashboardActivity", "Error loading worker data: ${e.message}", e)
+            Log.e("WorkerDashboardActivity", "Error loading worker data: ${e.message}, stackTrace=${e.stackTraceToString()}")
             binding.tvWorkerName.text = "Error memuat data"
             binding.tvWorkerRole.text = ""
         }
     }
 
+    private fun checkNewAssignments() {
+        try {
+            val lastCheckTime = sessionManager.getLastAssignmentCheckTime()
+            val newAssignments = dbHelper.getNewProjectAssignmentsForWorker(workerId, lastCheckTime)
+            Log.d("WorkerDashboardActivity", "New assignments: ${newAssignments.size}")
+            sessionManager.setLastAssignmentCheckTime(System.currentTimeMillis())
+            if (newAssignments.isNotEmpty()) {
+                binding.cardQuickNotification.visibility = View.VISIBLE
+                val projectCount = newAssignments.size
+                binding.tvNotificationTitle.text = "Tugas Baru Tersedia"
+                binding.tvNotificationMessage.text = getString(
+                    R.string.new_project_notification,
+                    projectCount,
+                    if (projectCount > 1) "tugas baru" else "tugas baru"
+                )
+            } else {
+                binding.cardQuickNotification.visibility = View.GONE
+            }
+        } catch (e: Exception) {
+            Log.e("WorkerDashboardActivity", "Error checking assignments: ${e.message}", e)
+            binding.cardQuickNotification.visibility = View.GONE
+        }
+    }
+
+    private fun loadStats() {
+        try {
+            val completedCount = dbHelper.getCompletedTaskCount(workerId)
+            val pendingCount = dbHelper.getPendingTaskCount(workerId)
+            binding.tvCompletedCount.text = completedCount.toString()
+            binding.tvPendingCount.text = pendingCount.toString()
+            Log.d("WorkerDashboardActivity", "Stats: Completed=$completedCount, Pending=$pendingCount")
+        } catch (e: Exception) {
+            Log.e("WorkerDashboardActivity", "Error loading stats: ${e.message}", e)
+            binding.tvCompletedCount.text = "0"
+            binding.tvPendingCount.text = "0"
+        }
+    }
+
+    private fun loadRecentNotifications() {
+        try {
+            val notifications = dbHelper.getRecentNotifications(workerId)
+            Log.d("WorkerDashboardActivity", "Found ${notifications.size} recent notifications")
+            binding.rvNotifications.layoutManager = LinearLayoutManager(this)
+            binding.rvNotifications.adapter = NotificationAdapter(notifications)
+        } catch (e: Exception) {
+            Log.e("WorkerDashboardActivity", "Error loading notifications: ${e.message}", e)
+        }
+    }
+
     private fun setupClickListeners() {
         try {
+
+
+            // Projects card click
             binding.cardViewProjects.setOnClickListener {
-                Log.d("WorkerDashboardActivity", "Projects card clicked, workerId: $workerId")
+                Log.d("WorkerDashboardActivity", "Projects card clicked")
                 animateCardClick(binding.cardViewProjects) {
-                    try {
-                        val intent = Intent(this, WorkerProjectListActivity::class.java)
-                        intent.putExtra("WORKER_ID", workerId)
-                        Log.d("WorkerDashboardActivity", "Starting WorkerProjectListActivity with workerId: $workerId")
-                        startActivity(intent)
-                    } catch (e: Exception) {
-                        Log.e("WorkerDashboardActivity", "Error starting WorkerProjectListActivity: ${e.message}", e)
-                        Toast.makeText(this, "Gagal membuka daftar proyek", Toast.LENGTH_SHORT).show()
-                    }
+                    val intent = Intent(this, WorkerProjectListActivity::class.java)
+                    intent.putExtra("WORKER_ID", workerId)
+                    startActivity(intent)
                 }
             }
 
+
+
+            // Logout button click
             binding.btnLogout.setOnClickListener {
                 showLogoutDialog()
             }
@@ -137,18 +211,18 @@ class WorkerDashboardActivity : AppCompatActivity() {
 
     private fun animateViews() {
         try {
-            val slideInAnimation = AnimationUtils.loadAnimation(this, android.R.anim.slide_in_left)
-            val fadeInAnimation = AnimationUtils.loadAnimation(this, android.R.anim.fade_in)
-
-            binding.layoutHeader.startAnimation(slideInAnimation)
-            binding.layoutCards.startAnimation(fadeInAnimation)
+            val slideIn = AnimationUtils.loadAnimation(this, android.R.anim.slide_in_left)
+            val fadeIn = AnimationUtils.loadAnimation(this, android.R.anim.fade_in)
+            binding.layoutHeader.startAnimation(slideIn)
+            binding.cardQuickNotification.startAnimation(fadeIn)
+            binding.layoutCards.startAnimation(fadeIn)
+            binding.rvNotifications.startAnimation(fadeIn)
         } catch (e: Exception) {
             Log.e("WorkerDashboardActivity", "Error animating views: ${e.message}", e)
-            // Don't crash if animations fail
         }
     }
 
-    private fun animateCardClick(view: android.view.View, action: () -> Unit) {
+    private fun animateCardClick(view: View, action: () -> Unit) {
         try {
             val scaleDown = android.view.animation.ScaleAnimation(
                 1.0f, 0.95f, 1.0f, 0.95f,
@@ -173,7 +247,6 @@ class WorkerDashboardActivity : AppCompatActivity() {
             }, 200)
         } catch (e: Exception) {
             Log.e("WorkerDashboardActivity", "Error animating card click: ${e.message}", e)
-            // Execute action immediately if animation fails
             action()
         }
     }
@@ -183,23 +256,18 @@ class WorkerDashboardActivity : AppCompatActivity() {
             AlertDialog.Builder(this)
                 .setTitle("Logout")
                 .setMessage("Apakah Anda yakin ingin keluar?")
-                .setPositiveButton("Ya") { _, _ ->
-                    logout()
-                }
+                .setPositiveButton("Ya") { _, _ -> logout() }
                 .setNegativeButton("Batal", null)
                 .show()
         } catch (e: Exception) {
             Log.e("WorkerDashboardActivity", "Error showing logout dialog: ${e.message}", e)
-            logout() // Fallback to direct logout
+            logout()
         }
     }
 
     private fun logout() {
         try {
-            // Clear session using SessionManager
             sessionManager.clearSession()
-
-            // Navigate back to login
             val intent = Intent(this, LoginActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             startActivity(intent)
@@ -210,9 +278,15 @@ class WorkerDashboardActivity : AppCompatActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        checkNewAssignments()
+        loadStats()
+        loadRecentNotifications()
+    }
+
     override fun onBackPressed() {
         super.onBackPressed()
-        // Show logout dialog when back is pressed
         showLogoutDialog()
     }
 }
