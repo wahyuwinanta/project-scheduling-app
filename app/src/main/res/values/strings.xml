@@ -38,4 +38,6 @@
         <string name="add_image">Add Image</string>
         <string name="take_photo">Take Photo</string>
         <string name="save">Save</string>
+    <string name="update_project">Update</string>
+    <string name="new_project_notification">Anda memiliki %1$d %2$s!</string>
 </resources>

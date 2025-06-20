@@ -56,66 +56,82 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
     override fun onCreate(db: SQLiteDatabase) {
         // Create projects table
         val createProjectsTable = """
-            CREATE TABLE $TABLE_PROJECTS (
-                $KEY_PROJECT_ID INTEGER PRIMARY KEY AUTOINCREMENT,
-                $KEY_PROJECT_NAME TEXT,
-                $KEY_PROJECT_LOCATION TEXT,
-                $KEY_PROJECT_START_DATE TEXT,
-                $KEY_PROJECT_STATUS TEXT,
-                $KEY_PROJECT_PROGRESS INTEGER,
-                $KEY_PROJECT_NOTES TEXT
-            )
-        """.trimIndent()
+        CREATE TABLE $TABLE_PROJECTS (
+            $KEY_PROJECT_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            $KEY_PROJECT_NAME TEXT,
+            $KEY_PROJECT_LOCATION TEXT,
+            $KEY_PROJECT_START_DATE TEXT,
+            $KEY_PROJECT_STATUS TEXT,
+            $KEY_PROJECT_PROGRESS INTEGER,
+            $KEY_PROJECT_NOTES TEXT
+        )
+    """.trimIndent()
 
         // Create workers table
         val createWorkersTable = """
-            CREATE TABLE $TABLE_WORKERS (
-                $KEY_WORKER_ID INTEGER PRIMARY KEY AUTOINCREMENT,
-                $KEY_WORKER_NAME TEXT,
-                $KEY_WORKER_ROLE TEXT
-            )
-        """.trimIndent()
+        CREATE TABLE $TABLE_WORKERS (
+            $KEY_WORKER_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            $KEY_WORKER_NAME TEXT,
+            $KEY_WORKER_ROLE TEXT
+        )
+    """.trimIndent()
 
         // Create assignments table
         val createAssignmentsTable = """
-            CREATE TABLE $TABLE_PROJECT_ASSIGNMENTS (
-                $KEY_ASSIGNMENT_ID INTEGER PRIMARY KEY AUTOINCREMENT,
-                $KEY_ASSIGNMENT_PROJECT_ID INTEGER,
-                $KEY_ASSIGNMENT_WORKER_ID INTEGER,
-                FOREIGN KEY ($KEY_ASSIGNMENT_PROJECT_ID) REFERENCES $TABLE_PROJECTS($KEY_PROJECT_ID) ON DELETE CASCADE,
-                FOREIGN KEY ($KEY_ASSIGNMENT_WORKER_ID) REFERENCES $TABLE_WORKERS($KEY_WORKER_ID)
-            )
-        """.trimIndent()
+        CREATE TABLE $TABLE_PROJECT_ASSIGNMENTS (
+            $KEY_ASSIGNMENT_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            $KEY_ASSIGNMENT_PROJECT_ID INTEGER,
+            $KEY_ASSIGNMENT_WORKER_ID INTEGER,
+            assignment_timestamp INTEGER,
+            FOREIGN KEY ($KEY_ASSIGNMENT_PROJECT_ID) REFERENCES $TABLE_PROJECTS($KEY_PROJECT_ID) ON DELETE CASCADE,
+            FOREIGN KEY ($KEY_ASSIGNMENT_WORKER_ID) REFERENCES $TABLE_WORKERS($KEY_WORKER_ID)
+        )
+    """.trimIndent()
 
         // Create users table
         val createUsersTable = """
-            CREATE TABLE $TABLE_USERS (
-                $KEY_USER_ID INTEGER PRIMARY KEY AUTOINCREMENT,
-                $KEY_USERNAME TEXT UNIQUE,
-                $KEY_PASSWORD TEXT,
-                $KEY_ROLE TEXT,
-                $KEY_WORKER_ID_FK INTEGER,
-                FOREIGN KEY ($KEY_WORKER_ID_FK) REFERENCES $TABLE_WORKERS($KEY_WORKER_ID) ON DELETE CASCADE
-            )
-        """.trimIndent()
+        CREATE TABLE $TABLE_USERS (
+            $KEY_USER_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            $KEY_USERNAME TEXT UNIQUE,
+            $KEY_PASSWORD TEXT,
+            $KEY_ROLE TEXT,
+            $KEY_WORKER_ID_FK INTEGER,
+            FOREIGN KEY ($KEY_WORKER_ID_FK) REFERENCES $TABLE_WORKERS($KEY_WORKER_ID) ON DELETE CASCADE
+        )
+    """.trimIndent()
 
         // Create project images table
         val createProjectImagesTable = """
-            CREATE TABLE $TABLE_PROJECT_IMAGES (
-                $KEY_IMAGE_ID INTEGER PRIMARY KEY AUTOINCREMENT,
-                $KEY_IMAGE_PROJECT_ID INTEGER,
-                $KEY_IMAGE_PATH TEXT,
-                FOREIGN KEY ($KEY_IMAGE_PROJECT_ID) REFERENCES $TABLE_PROJECTS($KEY_PROJECT_ID) ON DELETE CASCADE
-            )
-        """.trimIndent()
+        CREATE TABLE $TABLE_PROJECT_IMAGES (
+            $KEY_IMAGE_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            $KEY_IMAGE_PROJECT_ID INTEGER,
+            $KEY_IMAGE_PATH TEXT,
+            FOREIGN KEY ($KEY_IMAGE_PROJECT_ID) REFERENCES $TABLE_PROJECTS($KEY_PROJECT_ID) ON DELETE CASCADE
+        )
+    """.trimIndent()
 
+        // Create notifications table
+        val createNotificationsTable = """
+        CREATE TABLE notifications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            worker_id INTEGER,
+            title TEXT,
+            message TEXT,
+            timestamp INTEGER,
+            FOREIGN KEY (worker_id) REFERENCES $TABLE_WORKERS($KEY_WORKER_ID)
+        )
+    """.trimIndent()
+
+        // Execute table creation
         db.execSQL(createProjectsTable)
         db.execSQL(createWorkersTable)
         db.execSQL(createAssignmentsTable)
         db.execSQL(createUsersTable)
         db.execSQL(createProjectImagesTable)
+        db.execSQL(createNotificationsTable)
 
-        // Pre-populate sample users
+        // Pre-populate sample data
+        // Users
         val admin1 = ContentValues().apply {
             put(KEY_USERNAME, "Admin")
             put(KEY_PASSWORD, "admin123")
@@ -137,7 +153,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         try {
             if (cursor.moveToFirst()) {
                 do {
-                    Log.d("DatabaseHelper", "Table: ${cursor.getString(0)}")
+                    Log.d("DatabaseHelper", "Table created: ${cursor.getString(0)}")
                 } while (cursor.moveToNext())
             }
         } finally {
@@ -146,6 +162,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        db.execSQL("DROP TABLE IF EXISTS notifications")
         db.execSQL("DROP TABLE IF EXISTS $TABLE_PROJECT_IMAGES")
         db.execSQL("DROP TABLE IF EXISTS $TABLE_USERS")
         db.execSQL("DROP TABLE IF EXISTS $TABLE_PROJECT_ASSIGNMENTS")
@@ -234,6 +251,18 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
     private fun isAdmin(userId: Int): Boolean {
         val user = getUserById(userId)
         return user?.role == "admin"
+    }
+
+    fun updateProject(projectId: Int, progressPercentage: Int, status: String, notes: String, imagePaths: List<String>) {
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            put("progress_percentage", progressPercentage)
+            put("status", status)
+            put("notes", notes)
+            put("image_paths", imagePaths.joinToString(",")) // Assuming image_paths is a comma-separated string
+        }
+        db.update("projects", values, "id = ?", arrayOf(projectId.toString()))
+        db.close()
     }
 
     // Add Project
@@ -861,33 +890,17 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
     }
 
     // Update Project
-    fun updateProject(
-        projectId: Int,
-        name: String,
-        location: String,
-        startDate: String,
-        status: String,
-        progressPercentage: Int,
-        notes: String?
-    ): Boolean {
+    fun updateProject(projectId: Int, status: String, progressPercentage: Int, notes: String?): Boolean {
         return try {
             val db = writableDatabase
             val values = ContentValues().apply {
-                put(KEY_PROJECT_NAME, name)
-                put(KEY_PROJECT_LOCATION, location)
-                put(KEY_PROJECT_START_DATE, startDate)
-                put(KEY_PROJECT_STATUS, status)
-                put(KEY_PROJECT_PROGRESS, progressPercentage)
-                put(KEY_PROJECT_NOTES, notes)
+                put("status", status)
+                put("progress_percentage", progressPercentage)
+                put("notes", notes)
             }
-            val rows = db.update(
-                TABLE_PROJECTS,
-                values,
-                "$KEY_PROJECT_ID = ?",
-                arrayOf(projectId.toString())
-            )
-            Log.d("DatabaseHelper", "Updated $rows row(s) for project ID: $projectId")
-            rows > 0
+            val rowsAffected = db.update("projects", values, "id = ?", arrayOf(projectId.toString()))
+            db.close()
+            rowsAffected > 0
         } catch (e: Exception) {
             Log.e("DatabaseHelper", "Error updating project: ${e.message}", e)
             false
@@ -955,6 +968,132 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         }
     }
 
+    fun getNewProjectAssignmentsForWorker(workerId: Int, lastCheckTime: Long): List<ProjectAssignment> {
+        val assignments = mutableListOf<ProjectAssignment>()
+        val db = readableDatabase
+        val cursor = db.rawQuery(
+            """
+        SELECT $KEY_ASSIGNMENT_ID, $KEY_ASSIGNMENT_PROJECT_ID, $KEY_ASSIGNMENT_WORKER_ID, assignment_timestamp 
+        FROM $TABLE_PROJECT_ASSIGNMENTS 
+        WHERE $KEY_ASSIGNMENT_WORKER_ID = ? AND assignment_timestamp > ?
+        """,
+            arrayOf(workerId.toString(), lastCheckTime.toString())
+        )
+        try {
+            Log.d("DatabaseHelper", "getNewProjectAssignmentsForWorker: workerId=$workerId, lastCheckTime=$lastCheckTime, cursor count=${cursor.count}")
+            while (cursor.moveToNext()) {
+                val idIndex = cursor.getColumnIndex(KEY_ASSIGNMENT_ID)
+                val projectIdIndex = cursor.getColumnIndex(KEY_ASSIGNMENT_PROJECT_ID)
+                val workerIdIndex = cursor.getColumnIndex(KEY_ASSIGNMENT_WORKER_ID)
+                if (idIndex != -1 && projectIdIndex != -1 && workerIdIndex != -1) {
+                    assignments.add(ProjectAssignment(
+                        id = cursor.getInt(idIndex),
+                        projectId = cursor.getInt(projectIdIndex),
+                        workerId = cursor.getInt(workerIdIndex),
+                        isNew = true
+                    ))
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("DatabaseHelper", "Error fetching assignments: ${e.message}", e)
+        } finally {
+            cursor.close()
+            db.close()
+        }
+        return assignments
+    }
+
+    fun getCompletedTaskCount(workerId: Int): Int {
+        val db = readableDatabase
+        var count = 0
+        val cursor = db.rawQuery(
+            """
+        SELECT COUNT(*) 
+        FROM $TABLE_PROJECT_ASSIGNMENTS pa
+        INNER JOIN $TABLE_PROJECTS p ON pa.$KEY_ASSIGNMENT_PROJECT_ID = p.$KEY_PROJECT_ID
+        WHERE pa.$KEY_ASSIGNMENT_WORKER_ID = ? AND p.$KEY_PROJECT_STATUS = 'Selesai'
+        """,
+            arrayOf(workerId.toString())
+        )
+        try {
+            if (cursor.moveToFirst()) {
+                count = cursor.getInt(0)
+                Log.d("DatabaseHelper", "getCompletedTaskCount: workerId=$workerId, count=$count")
+            }
+        } catch (e: Exception) {
+            Log.e("DatabaseHelper", "Error getting completed task count: ${e.message}", e)
+        } finally {
+            cursor.close()
+            db.close()
+        }
+        return count
+    }
+
+    fun getPendingTaskCount(workerId: Int): Int {
+        val db = readableDatabase
+        var count = 0
+        val cursor = db.rawQuery(
+            """
+        SELECT COUNT(*) 
+        FROM $TABLE_PROJECT_ASSIGNMENTS pa
+        INNER JOIN $TABLE_PROJECTS p ON pa.$KEY_ASSIGNMENT_PROJECT_ID = p.$KEY_PROJECT_ID
+        WHERE pa.$KEY_ASSIGNMENT_WORKER_ID = ? AND p.$KEY_PROJECT_STATUS != 'Selesai'
+        """,
+            arrayOf(workerId.toString())
+        )
+        try {
+            if (cursor.moveToFirst()) {
+                count = cursor.getInt(0)
+                Log.d("DatabaseHelper", "getPendingTaskCount: workerId=$workerId, count=$count")
+            }
+        } catch (e: Exception) {
+            Log.e("DatabaseHelper", "Error getting pending task count: ${e.message}", e)
+        } finally {
+            cursor.close()
+            db.close()
+        }
+        return count
+    }
+
+    fun getRecentNotifications(workerId: Int): List<Notification> {
+        val notifications = mutableListOf<Notification>()
+        val db = readableDatabase
+        val cursor = db.rawQuery(
+            """
+        SELECT id, title, message, timestamp 
+        FROM notifications 
+        WHERE worker_id = ? 
+        ORDER BY timestamp DESC 
+        LIMIT 10
+        """,
+            arrayOf(workerId.toString())
+        )
+        try {
+            Log.d("DatabaseHelper", "getRecentNotifications: workerId=$workerId, cursor count=${cursor.count}")
+            while (cursor.moveToNext()) {
+                val idIndex = cursor.getColumnIndex("id")
+                val titleIndex = cursor.getColumnIndex("title")
+                val messageIndex = cursor.getColumnIndex("message")
+                val timestampIndex = cursor.getColumnIndex("timestamp")
+                if (idIndex != -1 && titleIndex != -1 && messageIndex != -1 && timestampIndex != -1) {
+                    notifications.add(Notification(
+                        id = cursor.getInt(idIndex),
+                        title = cursor.getString(titleIndex) ?: "",
+                        message = cursor.getString(messageIndex) ?: "",
+                        timestamp = cursor.getLong(timestampIndex)
+                    ))
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("DatabaseHelper", "Error fetching notifications: ${e.message}", e)
+        } finally {
+            cursor.close()
+            db.close()
+        }
+        return notifications
+    }
+
+
     // Extension function for nullable Int
     private fun android.database.Cursor.getIntOrNull(columnIndex: Int): Int? {
         return if (isNull(columnIndex)) null else getInt(columnIndex)
@@ -1013,3 +1152,4 @@ data class DashboardStats(
     val totalWorkers: Int,
     val totalAssignments: Int
 )
+
